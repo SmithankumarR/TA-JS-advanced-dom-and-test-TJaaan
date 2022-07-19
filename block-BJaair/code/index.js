@@ -1,55 +1,68 @@
-let table = document.getElementById('bagua-table');
+let form = document.querySelector("form");
+let ul = document.querySelector("ul");
 
-let editingTd;
+let cardsData = JSON.parse(localStorage.getItem("cards")) || [];
 
-table.onclick = function(event) {
+form.addEventListener("submit", (event) => {
+  event.preventDefault();
 
-  // 3 possible targets
-  let target = event.target.closest('.edit-cancel,.edit-ok,td');
+  let title = event.target.elements.title.value;
+  let category = event.target.elements.category.value;
+  cardsData.push({ title, category });
 
-  if (!table.contains(target)) return;
+  localStorage.setItem("cards", JSON.stringify(cardsData));
 
-  if (target.className == 'edit-cancel') {
-    finishTdEdit(editingTd.elem, false);
-  } else if (target.className == 'edit-ok') {
-    finishTdEdit(editingTd.elem, true);
-  } else if (target.nodeName == 'TD') {
-    if (editingTd) return; // already editing
+  createUI(cardsData, ul);
+});
 
-    makeTdEditable(target);
-  }
+function handleEdit(event, info, id, label) {
+  let elm = event.target; //p
+  let input = document.createElement("input");
+  input.value = info;
+  input.addEventListener("keyup", (e) => {
+    if (e.keyCode === 13) {
+      let updatedValue = e.target.value;
+      cardsData[id][label] = updatedValue;
 
-};
+      createUI();
+      localStorage.setItem("cards", JSON.stringify(cardsData));
+    }
+  });
+  input.addEventListener("blur", (e) => {
+    let updatedValue = e.target.value;
+    cardsData[id][label] = updatedValue;
 
-function makeTdEditable(td) {
-  editingTd = {
-    elem: td,
-    data: td.innerHTML
-  };
+    createUI();
+    localStorage.setItem("cards", JSON.stringify(cardsData));
+  });
+  let parent = event.target.parentElement;
 
-  td.classList.add('edit-td'); // td is in edit state, CSS also styles the area inside
-
-  let textArea = document.createElement('textarea');
-  textArea.style.width = td.clientWidth + 'px';
-  textArea.style.height = td.clientHeight + 'px';
-  textArea.className = 'edit-area';
-
-  textArea.value = td.innerHTML;
-  td.innerHTML = '';
-  td.appendChild(textArea);
-  textArea.focus();
-
-  td.insertAdjacentHTML("beforeEnd",
-    '<div class="edit-controls"><button class="edit-ok">OK</button><button class="edit-cancel">CANCEL</button></div>'
-  );
+  parent.replaceChild(input, elm);
 }
 
-function finishTdEdit(td, isOk) {
-  if (isOk) {
-    td.innerHTML = td.firstChild.value;
-  } else {
-    td.innerHTML = editingTd.data;
-  }
-  td.classList.remove('edit-td');
-  editingTd = null;
+function createUI(data = cardsData, root = ul) {
+  // use of fragement
+  let fragment = new DocumentFragment();
+  root.innerHTML = "";
+
+  data.forEach((cardInfo, index) => {
+    let li = document.createElement("li");
+    li.classList = "list";
+    let p = document.createElement("p");
+    p.innerText = cardInfo.category;
+    p.addEventListener("dblclick", (event) =>
+      handleEdit(event, cardInfo.category, index, "category")
+    );
+    let h2 = document.createElement("h2");
+    h2.innerText = cardInfo.title;
+    h2.addEventListener("dblclick", (event) =>
+      handleEdit(event, cardInfo.title, index, "title")
+    );
+
+    li.append(p, h2);
+
+    fragment.appendChild(li);
+  });
+  root.append(fragment);
 }
+createUI(cardsData, ul);
