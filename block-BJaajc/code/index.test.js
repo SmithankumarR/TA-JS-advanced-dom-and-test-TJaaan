@@ -10,8 +10,6 @@ test("gets the FullName", () => {
 test("gets the FullName", () => {
     expect(getFullName()).not.toEqual("first lastName");
 });
-
-
 test("checks if it isPalindrome", () => {
     expect(isPalindrome()).toEqual(true);
 });
